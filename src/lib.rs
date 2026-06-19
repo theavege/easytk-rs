@@ -1,5 +1,7 @@
 #[cfg(target_os = "windows")]
 pub mod prelude {
+    const LINE: i32 = 3;
+    use fltk::app;
     pub use {
         fltk::{
             app::{MouseButton, awake, event_coords, event_key, event_mouse_button},
@@ -131,14 +133,6 @@ pub mod prelude {
         Self: WidgetExt,
     {
         fn update(&mut self, value: T);
-    }
-
-    impl Update<&String> for TextBuffer {
-        fn update(&mut self, value: &String) {
-            if self.text() != *value {
-                self.set_text(value);
-            };
-        }
     }
 
     impl Update<&String> for TextDisplay {
@@ -285,7 +279,7 @@ pub mod prelude {
 
     impl Config for Button {
         fn config(&mut self) {
-            self.set_label_size(HEIGHT_FONT);
+            self.set_label_size(30);
         }
     }
 

@@ -89,7 +89,7 @@ mod views {
     pub enum Msg {}
 
     #[derive(Clone, Default)]
-    struct View();
+    pub struct View();
 
     impl Component for View {
         type Event = Msg;
@@ -110,7 +110,7 @@ mod views {
     fn info() -> Flex {
         let mut wgt = Flex::default_fill();
         wgt.set_frame(FrameType::FlatBox);
-        wgt.set_margin(PAD);
+        wgt.set_margin(10);
         wgt.add(&{
             let mut wgt = Flex::default().column();
             wgt.set_frame(FrameType::RFlatBox);
@@ -120,11 +120,11 @@ mod views {
             wgt.add(&{
                 let mut wgt = HelpView::default();
                 wgt.set_color(Color::Background2);
-                wgt.set_scrollbar_size(LINE);
+                wgt.set_scrollbar_size(3);
                 wgt.set_text_size(16);
                 wgt.set_frame(FrameType::FlatBox);
                 wgt.set_tooltip("README");
-                wgt.set_value(include_str!("../README.html"));
+                wgt.set_value(include_str!("../assets/README.html"));
                 wgt
             });
             wgt.add(&{
@@ -196,9 +196,9 @@ mod views {
 
 #[cfg(target_os = "windows")]
 fn main() -> Result<(), FltkError> {
-    View::run(Settings {
+    views::View::run(Settings {
         xclass: Some("Simple"),
-        icon: Some(SvgImage::from_data(include_str!("../../assets/logo.svg")).unwrap()),
+        icon: Some(SvgImage::from_data(include_str!("../assets/logo.svg")).unwrap()),
         ..Default::default()
     })
 }
