@@ -1,0 +1,17 @@
+[package]
+name = "easytk"
+version = "0.0.1"
+authors = ["Artem V. Ageev <artem.v.ageev@gmail.com>"]
+license = "LGPL-2.1-only"
+repository = "https://github.com/theavege/easytk-rs"
+description = "MVC-pattern for FlTk and Gtk"
+keywords = ["MVC", "SVU"]
+categories = ["gui"]
+edition = "2024"
+exclude = ["examples"]
+
+[target.'cfg(windows)'.dependencies]
+fltk = { version = "1.5"}
+
+[target.'cfg(unix)'.dependencies]
+gtk = { version = "0.18"}
