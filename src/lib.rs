@@ -47,6 +47,7 @@ pub mod prelude {
     impl Settings {
         pub fn config(&self) -> Window {
             app::set_scheme(app::Scheme::Base);
+            app::set_visible_focus(false);
             app::set_frame_type2(FrameType::UpBox, FrameType::ThinUpBox);
             app::set_frame_type2(FrameType::DownBox, FrameType::ThinDownBox);
             app::set_background_color(238, 232, 213);
@@ -66,7 +67,6 @@ pub mod prelude {
             ] {
                 app::set_color(color, r, g, b);
             }
-            app::set_visible_focus(false);
             app::set_font(match cfg!(target_os = "windows") {
                 true => Font::by_name("BCascadia Mono"),
                 false => self.font.unwrap_or(Font::CourierBold),
@@ -153,25 +153,19 @@ pub mod prelude {
 
     impl Update<&String> for TextEditor {
         fn update(&mut self, value: &String) {
-            let mut buffer = self.buffer().unwrap();
-            if buffer.text() != *value {
-                buffer.set_text(value);
+            if !self.has_focus() {
+                let mut buffer = self.buffer().unwrap();
+                if buffer.text() != *value {
+                    buffer.set_text(value);
+                }
             };
         }
     }
 
     impl Update<&String> for Input {
         fn update(&mut self, value: &String) {
-            if self.value() != *value {
+            if !self.has_focus() && self.value() != *value {
                 self.set_value(value);
-            };
-        }
-    }
-
-    impl Update<&String> for Frame {
-        fn update(&mut self, value: &String) {
-            if self.label() != *value {
-                self.set_label(value);
             };
         }
     }
@@ -215,7 +209,7 @@ pub mod prelude {
 
     impl Update<f64> for Slider {
         fn update(&mut self, value: f64) {
-            if self.value() != value {
+            if !self.has_focus() && self.value() != value {
                 self.set_value(value);
             };
         }
@@ -408,7 +402,8 @@ pub mod prelude {
             std::env::var(match cfg!(target_os = "windows") {
                 true => "HOMEPATH",
                 false => "HOME",
-            }).unwrap(),
+            })
+            .unwrap(),
             filter,
             match filter.is_empty() {
                 true => FileChooserType::Directory,
@@ -431,7 +426,8 @@ pub mod prelude {
             std::env::var(match cfg!(target_os = "windows") {
                 true => "HOMEPATH",
                 false => "HOME",
-            }).unwrap(),
+            })
+            .unwrap(),
             filter,
             FileChooserType::Multi,
             "Choose File...",

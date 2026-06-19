@@ -12,16 +12,16 @@ mod models {
     }
 }
 
+pub enum Msg {
+    Cel(f64),
+    Far(f64),
+}
+
 use easytk::prelude::*;
 
 #[cfg(target_os = "linux")]
 mod views {
     use super::*;
-
-    pub enum Msg {
-        Cel(f64),
-        Far(f64),
-    }
 
     #[derive(Default)]
     pub struct View(gtk::Entry, gtk::Entry);
@@ -86,22 +86,63 @@ fn main() -> gtk::glib::ExitCode {
 mod views {
     use super::*;
 
-    pub enum Msg {}
-
     #[derive(Clone, Default)]
-    pub struct View();
+    pub struct View(Input, Input);
 
     impl Component for View {
         type Event = Msg;
-        type State = bool;
-        fn handle(_msg: Self::Event, _model: &mut Self::State, _: Sender<Self::Event>) -> bool {
-            false
+        type State = models::Model;
+        fn handle(msg: Self::Event, model: &mut Self::State, _: Sender<Self::Event>) -> bool {
+            match msg {
+                Msg::Cel(value) => model.set_cel(value),
+                Msg::Far(value) => model.set_far(value),
+            };
+            true
         }
-        fn update(&mut self, _model: &Self::State) {}
-        fn view(&mut self, _sender: Sender<Self::Event>) -> impl WidgetExt {
+        fn update(&mut self, model: &Self::State) {
+            self.0.update(&model.0.to_string());
+            self.1.update(&model.1.to_string());
+        }
+        fn view(&mut self, sender: Sender<Self::Event>) -> impl WidgetExt {
             let mut wgt = Wizard::default_fill();
             wgt.set_frame(FrameType::FlatBox);
             wgt.add(&info().with_label("Info"));
+            wgt.add(&{
+                let mut wgt = Flex::default_fill().with_label("Converter");
+                wgt.set_frame(FrameType::FlatBox);
+                wgt.set_margin(10);
+                wgt.add({
+                    self.0.set_tooltip("Cel");
+                    self.0.set_type(InputType::Float);
+                    self.0.set_trigger(CallbackTrigger::Changed);
+                    self.0.set_callback({
+                        let sender = sender.clone();
+                        move |wgt| {
+                            if wgt.has_focus() {
+                                let value = wgt.value().parse::<f64>().unwrap_or_default();
+                                sender.send(Msg::Cel(value)).unwrap();
+                            }
+                        }
+                    });
+                    &self.0
+                });
+                wgt.add({
+                    self.1.set_tooltip("Far");
+                    self.1.set_type(InputType::Float);
+                    self.1.set_trigger(CallbackTrigger::Changed);
+                    self.1.set_callback({
+                        let sender = sender.clone();
+                        move |wgt| {
+                            if wgt.has_focus() {
+                                let value = wgt.value().parse::<f64>().unwrap_or_default();
+                                sender.send(Msg::Far(value)).unwrap();
+                            }
+                        }
+                    });
+                    &self.1
+                });
+                wgt
+            });
             wgt.end();
             wgt
         }
