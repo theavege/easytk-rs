@@ -43,7 +43,6 @@ pub mod prelude {
         pub xclass: Option<&'static str>,
         pub icon: Option<SvgImage>,
     }
-
     impl Settings {
         pub fn config(&self) -> Window {
             app::set_scheme(app::Scheme::Base);
@@ -90,11 +89,11 @@ pub mod prelude {
     where
         Self: Default + Clone + 'static,
     {
-        type State: Default + 'static;
+        type State: Default;
         type Event: 'static;
-        fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool;
-        fn update(&mut self, model: &Self::State);
         fn view(&mut self, sender: Sender<Self::Event>) -> impl WidgetExt;
+        fn update(&mut self, model: &Self::State);
+        fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool;
         fn mount(&mut self) -> impl WidgetExt {
             let (sender, resiver) = channel::<Self::Event>();
             let mut model = Self::State::default();
@@ -154,7 +153,13 @@ pub mod prelude {
     impl Update<&String> for TextEditor {
         fn update(&mut self, value: &String) {
             if !self.has_focus() {
-                let mut buffer = self.buffer().unwrap();
+            let mut buffer = match self.buffer() {
+                Some(buf) => buf,
+                None => {
+                    self.set_buffer(TextBuffer::default());
+                    self.buffer().unwrap()
+                }
+            };
                 if buffer.text() != *value {
                     buffer.set_text(value);
                 }
@@ -254,7 +259,7 @@ pub mod prelude {
 
     pub trait Config
     where
-        Self: 'static,
+        Self: WidgetExt,
     {
         fn config(&mut self);
     }
@@ -268,12 +273,6 @@ pub mod prelude {
             self.set_text_size(16);
             self.set_scrollbar_size(LINE);
             self.wrap_mode(WrapMode::AtBounds, 0);
-        }
-    }
-
-    impl Config for Button {
-        fn config(&mut self) {
-            self.set_label_size(30);
         }
     }
 
@@ -321,7 +320,7 @@ pub mod prelude {
 
     pub trait Listener
     where
-        Self: 'static,
+        Self: WidgetExt,
     {
         fn listen(wgt: &mut Self, event: Event) -> bool;
     }
@@ -457,15 +456,15 @@ pub mod prelude {
     {
         type Event: 'static;
         type State: Default + 'static;
-        fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool;
-        fn update(&self, model: &Self::State);
         fn view(&self, sender: Sender<Self::Event>) -> gtk::Box;
+        fn update(&self, model: &Self::State);
+        fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool;
         fn mount() -> gtk::Box {
             let (sender, resiver) = std::sync::mpsc::channel::<Self::Event>();
             let mut model = Self::State::default();
             let page = Self::default();
-            page.update(&model);
             let view = page.view(sender.clone());
+            page.update(&model);
             gtk::glib::timeout_add_local(std::time::Duration::from_millis(20), {
                 let sender = sender.clone();
                 move || {

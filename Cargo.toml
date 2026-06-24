@@ -4,14 +4,35 @@ version = "0.0.1"
 authors = ["Artem V. Ageev <artem.v.ageev@gmail.com>"]
 license = "LGPL-2.1-only"
 repository = "https://github.com/theavege/easytk-rs"
-description = "MVC-pattern for FlTk and Gtk"
+description = "MVC-pattern for FlTk-rs and Gtk-rs"
 keywords = ["MVC", "SVU"]
 categories = ["gui"]
 edition = "2024"
 exclude = ["examples"]
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json", "native-tls", "blocking"], optional = true }
+json-tools = { version = "1", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 fltk = { version = "1.5"}
 
 [target.'cfg(unix)'.dependencies]
 gtk = { version = "0.18"}
+
+comfy-table = { version = "7", optional = true }
+
+xlsxwriter = { version = "0", optional = true }
+
+similar = { version = "2.5", optional = true }
+chrono = { version = "0.4", optional = true }
+serde = { version="1", features = ["derive"], optional = true  }
+serde_json = { version = "1", optional = true  }
+rmp-serde = { version="1", optional = true  }
+
+[features]
+reqwest = [
+    "dep:reqwest",
+    "json-tools",
+]
+all = ["reqwest"]
