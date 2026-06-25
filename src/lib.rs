@@ -153,13 +153,13 @@ pub mod prelude {
     impl Update<&String> for TextEditor {
         fn update(&mut self, value: &String) {
             if !self.has_focus() {
-            let mut buffer = match self.buffer() {
-                Some(buf) => buf,
-                None => {
-                    self.set_buffer(TextBuffer::default());
-                    self.buffer().unwrap()
-                }
-            };
+                let mut buffer = match self.buffer() {
+                    Some(buf) => buf,
+                    None => {
+                        self.set_buffer(TextBuffer::default());
+                        self.buffer().unwrap()
+                    }
+                };
                 if buffer.text() != *value {
                     buffer.set_text(value);
                 }

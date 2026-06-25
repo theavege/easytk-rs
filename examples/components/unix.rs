@@ -1,3 +1,5 @@
+use easytk::prelude::*;
+
 #[derive(Default)]
 pub struct Converter(gtk::Entry, gtk::Entry);
 
@@ -6,8 +8,8 @@ impl Component for Converter {
     type State = super::mdls::Converter;
     fn handle(msg: Self::Event, model: &mut Self::State, _: Sender<Self::Event>) -> bool {
         match msg {
-            Msg::Cel(value) => model.set_cel(value),
-            Msg::Far(value) => model.set_far(value),
+            Self::Event::Cel(value) => model.set_cel(value),
+            Self::Event::Far(value) => model.set_far(value),
         };
         true
     }
@@ -17,86 +19,156 @@ impl Component for Converter {
     }
     fn view(&self, sender: Sender<Self::Event>) -> gtk::Box {
         let pad = 10;
-        let adjustment = Adjustment::new(0.0, 0.0, 255.0, 1.0, 10.0, 0.0);
+        let adjustment = gtk::Adjustment::new(0.0, 0.0, 255.0, 1.0, 10.0, 0.0);
         let wgt = gtk::Box::new(gtk::Orientation::Vertical, pad);
         wgt.set_margin(pad);
-        wgt.add({
-            self.0.set_placeholder_text(Some("°C"));
-            self.0.set_hexpand(true);
-            self.0.connect_changed({
-                let sender = sender.clone();
-                move |entry| {
-                    if entry.has_visible_focus() {
-                        let value = entry.buffer().text().parse::<f64>().unwrap_or_default();
-                        sender.send(Msg::Cel(value)).unwrap();
+        wgt.add(&{
+            let wgt = gtk::Box::new(gtk::Orientation::Horizontal, PAD);
+            wgt.add({
+                self.0.set_placeholder_text(Some("°C"));
+                self.0.set_hexpand(true);
+                self.0.connect_changed({
+                    let sender = sender.clone();
+                    move |entry| {
+                        if entry.has_visible_focus() {
+                            let value = entry.buffer().text().parse::<f64>().unwrap_or_default();
+                            sender.send(Self::Event::Cel(value)).unwrap();
+                        }
                     }
-                }
+                });
+                &self.0
             });
-            &self.0
-        });
-        wgt.add({
-            self.1.set_placeholder_text(Some("°F"));
-            self.1.set_hexpand(true);
-            self.1.connect_changed({
-                let sender = sender.clone();
-                move |entry| {
-                    if entry.has_visible_focus() {
-                        let value = entry.buffer().text().parse::<f64>().unwrap_or_default();
-                        sender.send(Msg::Far(value)).unwrap();
+            wgt.add({
+                self.1.set_placeholder_text(Some("°F"));
+                self.1.set_hexpand(true);
+                self.1.connect_changed({
+                    let sender = sender.clone();
+                    move |entry| {
+                        if entry.has_visible_focus() {
+                            let value = entry.buffer().text().parse::<f64>().unwrap_or_default();
+                            sender.send(Self::Event::Far(value)).unwrap();
+                        }
                     }
-                }
+                });
+                &self.1
             });
-            &self.1
+            wgt
         });
-        wgt.add({
-            let wgt = SpinButton::with_range(0.0, 255.0, 1.0);
+        wgt.add(&{
+            let wgt = gtk::SpinButton::with_range(0.0, 255.0, 1.0);
             wgt.set_adjustment(&adjustment);
             wgt
         });
-        wgt.add({
-            let wgt = Scale::with_range(0.0, 255.0, 1.0);
+        wgt.add(&{
+            let wgt = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 255.0, 1.0);
             wgt.set_adjustment(&adjustment);
             wgt
+        });
+        wgt.add(&Curl::mount());
+        let list_store = gtk::ListStore::new(&[
+            gtk::glib::types::Type::BOOL,
+            gtk::glib::types::Type::STRING,
+            gtk::glib::types::Type::STRING,
+            gtk::glib::Type::U32,
+        ]);
+        for url in ["https://ipinfo.io/json"] {
+            let name: &str = url.split('/').nth_back(0).unwrap();
+            list_store.set(&list_store.append(), &[(0, &true), (1, &name), (2, &url)]);
+        }
+        let tree_view = gtk::TreeView::with_model(&list_store);
+        for (ord, name) in ["STATUS", "NAME", "URL"].into_iter().enumerate() {
+            match name {
+                "STATUS" => {
+                    let renderer = gtk::CellRendererToggle::new();
+                    renderer.connect_toggled({
+                        let list_store = list_store.clone();
+                        move |_, path| {
+                            let iter = list_store.iter(&path).unwrap();
+                            list_store.set_value(
+                                &iter,
+                                ord as u32,
+                                &(!list_store.value(&iter, ord as i32).get::<bool>().unwrap())
+                                    .to_value(),
+                            );
+                        }
+                    });
+                    tree_view.append_column(&gtk::TreeViewColumn::with_attributes(
+                        name,
+                        &renderer,
+                        &[("active", ord as i32)],
+                    ))
+                }
+                _ => tree_view.append_column(&gtk::TreeViewColumn::with_attributes(
+                    name,
+                    &gtk::CellRendererText::new(),
+                    &[("text", ord as i32)],
+                )),
+            };
+        }
+        let run = gtk::Button::with_mnemonic("Run");
+        let result = gtk::Label::with_mnemonic("Result");
+        wgt.add(&tree_view);
+        wgt.add(&{
+            let wgt = gtk::Box::new(gtk::Orientation::Horizontal, PAD);
+            wgt.add(&run);
+            wgt.add(&result);
+            wgt
+        });
+        run.connect_clicked({
+            let run = run.clone();
+            move |_| {
+                list_store.foreach(|store, _, iter| {
+                    if store.value(iter, 0).get::<bool>().unwrap() {
+                        println!("{}", list_store.value(iter, 2).get::<String>().unwrap());
+                    };
+                    false
+                });
+                let value = result.text();
+                result.set_text(&(value.to_string() + " Done!"));
+                run.set_sensitive(false);
+            }
         });
         wgt
     }
 }
 
+const PAD: i32 = 10;
+
 #[derive(Default)]
 pub struct Curl(gtk::TextBuffer);
 
 impl Component for Curl {
-    type Event = Msg;
+    type Event = super::msgs::Curl;
     type State = (String, String, String);
     fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool {
         match msg {
-            Msg::Url(value) => model.0 = value,
-            Msg::Body(value) => model.1 = value,
-            Msg::Responce(value) => {
+            Self::Event::Url(value) => model.0 = value,
+            Self::Event::Body(value) => model.1 = value,
+            Self::Event::Responce(value) => {
                 model.2 = value;
                 return true;
             }
-            Msg::Run => {
-                let url = model.url.clone();
-                std::thread::spawn(glib::clone!(
-                    @strong sender =>
+            Self::Event::Run => {
+                let url = model.0.clone();
+                std::thread::spawn({
+                    let sender = sender.clone();
                     move || {
-                        let value = match http_request(&url) {
-                            Ok(value) => value,
+                        let value = match reqwest::blocking::get(&url) {
+                            Ok(value) => value.text().unwrap(),
                             Err(value) => value.to_string(),
                         };
-                        sender.send(Msg::Responce(value)).unwrap();
+                        sender.send(Self::Event::Responce(value)).unwrap();
                     }
-                ));
+                });
             }
         };
         false
     }
     fn update(&self, model: &Self::State) {
-        self.responce.update(&model.responce);
+        self.0.set_text(&model.2);
     }
-    fn view(&self, sender: Sender<Self::Event>) -> Flex {
-        let list = ListStore::new(&[glib::Type::STRING]);
+    fn view(&self, sender: Sender<Self::Event>) -> gtk::Box {
+        let list = gtk::ListStore::new(&[gtk::glib::Type::STRING]);
         for line in [
             r#"https://jsonplaceholder.typicode.com/users"#,
             r#"https://jsonplaceholder.typicode.com/posts"#,
@@ -110,25 +182,30 @@ impl Component for Curl {
         ] {
             list.set(&list.append(), &[(0, &line)]);
         }
-        let wgt = Flex::new(Orientation::Vertical, PAD);
+        let wgt = gtk::Box::new(gtk::Orientation::Vertical, PAD);
         wgt.set_margin(PAD);
         wgt.add(&{
-            let wgt = Flex::new(Orientation::Horizontal, PAD);
+            let wgt = gtk::Box::new(gtk::Orientation::Horizontal, PAD);
             wgt.add(&{
                 let wgt = gtk::ComboBox::new();
                 wgt.set_tooltip_text(Some("Method"));
                 wgt
             });
             wgt.add(&{
-                let wgt = Entry::default();
-                wgt.connect_changed(glib::clone!(@strong sender => move |entry| {
-                    if entry.is_sensitive() {
-                        sender.send(Msg::Url(entry.buffer().text().to_string())).unwrap();
+                let wgt = gtk::Entry::default();
+                wgt.connect_changed({
+                    let sender = sender.clone();
+                    move |entry| {
+                        if entry.is_sensitive() {
+                            sender
+                                .send(Self::Event::Url(entry.buffer().text().to_string()))
+                                .unwrap();
+                        }
                     }
-                }));
+                });
                 wgt.set_placeholder_text(Some("URL"));
                 wgt.set_completion(Some(&{
-                    let wgt = EntryCompletion::default();
+                    let wgt = gtk::EntryCompletion::default();
                     wgt.set_popup_completion(true);
                     wgt.set_model(Some(&list));
                     wgt.set_text_column(0);
@@ -138,104 +215,62 @@ impl Component for Curl {
                 wgt
             });
             wgt.add(&{
-                let wgt = Button::with_mnemonic("list-add");
+                let wgt = gtk::Button::with_mnemonic("list-add");
                 wgt.set_tooltip_text(Some("Run"));
                 wgt.connect_clicked({
-                    glib::clone!(@strong sender => move |_| {
-                        sender.send(Msg::Run).unwrap();
-                    })
+                    let sender = sender.clone();
+                    move |_| {
+                        sender.send(Self::Event::Run).unwrap();
+                    }
                 });
                 wgt
             });
             wgt
         });
-        wgt.add(&ScrolledWindow::builder()
-            .hscrollbar_policy(PolicyType::Automatic)
-            .vscrollbar_policy(PolicyType::Automatic)
-            .child(&{
-                let wgt = TextView::with_buffer(&{
-                    let wgt = TextBuffer::default();
-                    wgt.connect_text_notify({
-                        let sender = sender.clone();
-                        move |buffer| {
-                            let value = buffer.start_iter().text(&buffer.end_iter()).unwrap().to_string();
-                            sender.send(Msg::Body(value)).unwrap();
-                        }
-                    });
-                    wgt
-                });
-                wgt.set_tooltip_text(Some("Body"));
-                wgt
-            })
-            .vexpand(true)
-            .build()
-        );
-        wgt.add(
-            &ScrolledWindow::builder()
-                .hscrollbar_policy(PolicyType::Automatic)
-                .vscrollbar_policy(PolicyType::Automatic)
-                .child(&{
-                    let wgt = TextView::with_buffer(&self.responce);
-                    wgt.set_monospace(true);
-                    wgt
-                })
-                .vexpand(true)
-                .build(),
-        );
+        wgt.add(&{
+            let wgt = gtk::Box::new(gtk::Orientation::Horizontal, PAD);
+            wgt.add(
+                &gtk::ScrolledWindow::builder()
+                    .hscrollbar_policy(gtk::PolicyType::Automatic)
+                    .vscrollbar_policy(gtk::PolicyType::Automatic)
+                    .child(&{
+                        let wgt = gtk::TextView::with_buffer(&{
+                            let wgt = gtk::TextBuffer::default();
+                            wgt.connect_text_notify({
+                                let sender = sender.clone();
+                                move |buffer| {
+                                    let value = buffer
+                                        .start_iter()
+                                        .text(&buffer.end_iter())
+                                        .unwrap()
+                                        .to_string();
+                                    sender.send(Self::Event::Body(value)).unwrap();
+                                }
+                            });
+                            wgt
+                        });
+                        wgt.set_hexpand(true);
+                        wgt.set_tooltip_text(Some("Body"));
+                        wgt
+                    })
+                    .vexpand(true)
+                    .build(),
+            );
+            wgt.add(
+                &gtk::ScrolledWindow::builder()
+                    .hscrollbar_policy(gtk::PolicyType::Automatic)
+                    .vscrollbar_policy(gtk::PolicyType::Automatic)
+                    .child(&{
+                        let wgt = gtk::TextView::with_buffer(&self.0);
+                        wgt.set_hexpand(true);
+                        wgt.set_monospace(true);
+                        wgt
+                    })
+                    .vexpand(true)
+                    .build(),
+            );
+            wgt
+        });
         wgt
     }
-}
-
-fn window(application: &Application) {
-    let list_store = ListStore::new(&[
-        glib::types::Type::BOOL,
-        glib::types::Type::STRING,
-        glib::types::Type::STRING,
-        glib::Type::U32,
-    ]);
-    for url in [
-        "https://www.libreoffice.org/donate/dl/win-x86_64/7.6.0/en-US/LibreOffice_7.6.0_Win_x86-64.msi",
-    ] {
-        let name: &str = url.split('/').nth_back(0).unwrap();
-        list_store.set(&list_store.append(), &[(0, &true), (1, &name), (2, &url)]);
-    }
-    let tree_view = TreeView::with_model(&list_store);
-    for (ord, name) in ["STATUS", "NAME", "URL"].into_iter().enumerate() {
-        match name {
-            "STATUS" => {
-                let renderer = CellRendererToggle::new();
-                renderer.connect_toggled(glib::clone!( @strong list_store => move |_, path| {
-                    let iter = list_store.iter(&path).unwrap();
-                    list_store.set_value(
-                        &iter,
-                        ord as u32,
-                        &(!list_store.value(&iter, ord as i32).get::<bool>().unwrap()).to_value(),
-                    );
-                }));
-                tree_view.append_column(&TreeViewColumn::with_attributes(
-                    name,
-                    &renderer,
-                    &[("active", ord as i32)],
-                ))
-            }
-            _ => tree_view.append_column(&TreeViewColumn::with_attributes(
-                name,
-                &CellRendererText::new(),
-                &[("text", ord as i32)],
-            )),
-        };
-    }
-    let run = Button::with_mnemonic("Run");
-    let result = Label::with_mnemonic("Result");
-    run.connect_clicked(glib::clone!(@strong run => move |_| {
-        list_store.foreach(|store, _, iter| {
-            if store.value(iter, 0).get::<bool>().unwrap() {
-                gtk_nsis::run(list_store.value(iter, 2).get::<String>().unwrap());
-            };
-            false
-        });
-        let value = result.text();
-        result.set_text(&(value.to_string() + " Done!"));
-        run.set_sensitive(false);
-    }));
 }

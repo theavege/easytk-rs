@@ -5,6 +5,7 @@ pub enum Converter {
 
 pub enum Curl {
     Url(String),
+    Body(String),
     Responce(String),
     Run,
 }

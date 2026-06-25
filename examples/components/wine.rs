@@ -434,7 +434,9 @@ impl Component for Pictures {
                     self.list.set_callback({
                         let sender = sender.clone();
                         move |menu| {
-                            sender.send(Self::Event::Idx(menu.value() as usize)).unwrap();
+                            sender
+                                .send(Self::Event::Idx(menu.value() as usize))
+                                .unwrap();
                         }
                     });
                     &self.list
@@ -497,7 +499,11 @@ impl Component for Pictures {
                 self.valu.set_value(0.5);
                 self.valu.set_callback({
                     let sender = sender.clone();
-                    move |wgt| sender.send(Self::Event::Scale(wgt.value() * 100.0)).unwrap()
+                    move |wgt| {
+                        sender
+                            .send(Self::Event::Scale(wgt.value() * 100.0))
+                            .unwrap()
+                    }
                 });
                 self.valu.do_callback();
                 &self.valu
@@ -965,10 +971,10 @@ impl Component for Dialect {
             wgt
         });
         //~ wgt.close({
-            //~ let sender = sender.clone();
-            //~ move |_| {
-                //~ sender.send(Self::Event::Quit).unwrap();
-            //~ }
+        //~ let sender = sender.clone();
+        //~ move |_| {
+        //~ sender.send(Self::Event::Quit).unwrap();
+        //~ }
         //~ });
         wgt.end();
         wgt
@@ -977,41 +983,41 @@ impl Component for Dialect {
 
 //~ const TO_JSON: Event = Event::from_i32(101);
 //~ fn handle_highlight(display: &mut TextDisplay, event: Event) -> bool {
-    //~ let text = display.buffer().unwrap().text();
-    //~ match event {
-        //~ TO_JSON => {
-            //~ use json_tools::{Buffer, BufferType, Lexer, Span, TokenType};
-            //~ let mut buffer = vec![b'A'; text.len()];
-            //~ for token in Lexer::new(text.bytes(), BufferType::Span) {
-                //~ let c = match token.kind {
-                    //~ TokenType::String => 'B',
-                    //~ TokenType::BooleanTrue | TokenType::BooleanFalse | TokenType::Null => 'C',
-                    //~ TokenType::Number => 'D',
-                    //~ _ => 'A',
-                //~ };
-                //~ if let Buffer::Span(Span { first, end }) = token.buf {
-                    //~ let start = first as _;
-                    //~ let last = end as _;
-                    //~ buffer[start..last]
-                        //~ .copy_from_slice(c.to_string().repeat(last - start).as_bytes());
-                //~ }
-            //~ }
-            //~ let mut buf = TextBuffer::default();
-            //~ buf.set_text(&String::from_utf8_lossy(&buffer));
-            //~ let styles: Vec<StyleTableEntryExt> =
-                //~ [Color::Red, Color::Blue, Color::Green, Color::Yellow]
-                    //~ .into_iter()
-                    //~ .map(|color| StyleTableEntryExt {
-                        //~ color,
-                        //~ font: display.text_font(),
-                        //~ size: display.text_size(),
-                        //~ attr: TextAttr::None,
-                        //~ bgcolor: Color::TransparentBg,
-                    //~ })
-                    //~ .collect();
-            //~ display.set_highlight_data_ext(buf, styles);
-            //~ true
-        //~ }
-        //~ _ => false,
-    //~ }
+//~ let text = display.buffer().unwrap().text();
+//~ match event {
+//~ TO_JSON => {
+//~ use json_tools::{Buffer, BufferType, Lexer, Span, TokenType};
+//~ let mut buffer = vec![b'A'; text.len()];
+//~ for token in Lexer::new(text.bytes(), BufferType::Span) {
+//~ let c = match token.kind {
+//~ TokenType::String => 'B',
+//~ TokenType::BooleanTrue | TokenType::BooleanFalse | TokenType::Null => 'C',
+//~ TokenType::Number => 'D',
+//~ _ => 'A',
+//~ };
+//~ if let Buffer::Span(Span { first, end }) = token.buf {
+//~ let start = first as _;
+//~ let last = end as _;
+//~ buffer[start..last]
+//~ .copy_from_slice(c.to_string().repeat(last - start).as_bytes());
+//~ }
+//~ }
+//~ let mut buf = TextBuffer::default();
+//~ buf.set_text(&String::from_utf8_lossy(&buffer));
+//~ let styles: Vec<StyleTableEntryExt> =
+//~ [Color::Red, Color::Blue, Color::Green, Color::Yellow]
+//~ .into_iter()
+//~ .map(|color| StyleTableEntryExt {
+//~ color,
+//~ font: display.text_font(),
+//~ size: display.text_size(),
+//~ attr: TextAttr::None,
+//~ bgcolor: Color::TransparentBg,
+//~ })
+//~ .collect();
+//~ display.set_highlight_data_ext(buf, styles);
+//~ true
+//~ }
+//~ _ => false,
+//~ }
 //~ }
