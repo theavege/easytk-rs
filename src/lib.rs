@@ -50,11 +50,11 @@ pub mod prelude {
             app::set_frame_type2(FrameType::UpBox, FrameType::ThinUpBox);
             app::set_frame_type2(FrameType::DownBox, FrameType::ThinDownBox);
             //~ app::set_background_color(238, 232, 213);
-            app::set_background_color(212, 208, 200);
+            app::set_background_color(232, 233, 237);
             //~ app::set_background2_color(253, 246, 227);
             //~ app::set_foreground_color(88, 110, 117);
             //~ app::set_selection_color(203, 75, 22);
-            app::set_selection_color(10, 36, 106);
+            app::set_selection_color(75, 105, 131);
             //~ app::set_inactive_color(181, 137, 0);
             Tooltip::set_color(Color::Background2);
             Tooltip::set_text_color(Color::Foreground);
