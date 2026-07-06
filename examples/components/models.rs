@@ -1,23 +1,10 @@
 #[derive(Default)]
-pub struct Converter(pub f64, pub f64);
-
-impl Converter {
-    pub fn set_cel(&mut self, value: f64) {
-        self.1 = (value * 9.0 / 5.0) + 32.0;
-    }
-    pub fn set_far(&mut self, value: f64) {
-        self.0 = (value - 32.0) * 5.0 / 9.0;
-    }
-}
-
-#[derive(Default)]
 pub struct Calculator {
     pub prev: f64,
     pub operation: String,
     pub current: String,
     pub output: String,
 }
-
 impl Calculator {
     pub fn click(&mut self, value: &str) {
         match value {
@@ -88,20 +75,17 @@ pub struct Pictures {
     pub idx: usize,
     pub scale: f64,
 }
-
 impl Pictures {
-    pub fn shift(&mut self, direction: bool) {
-        if direction {
-            self.idx = match self.idx == self.list.len() - 1 {
-                true => 0,
-                false => self.idx + 1,
-            };
-        } else {
-            self.idx = match self.idx == 0 {
-                true => self.list.len() - 1,
-                false => self.idx - 1,
-            };
-        }
+    pub fn shift(&mut self, dir: bool) {
+        let step:isize  = match dir {
+            true => 1,
+            false => - 1,
+        };
+        let next:isize = self.idx as isize + step;
+        self.idx = match (0..self.list.len()).contains(&(next as usize)) {
+            true => next,
+            false => self.list.len() as isize - next * step,
+        } as usize;
     }
     pub fn del(&mut self, value: bool) {
         if let Some(path) = self.path() {
@@ -131,7 +115,6 @@ impl Pictures {
 
 #[derive(Default)]
 pub struct Sudoku(pub [[i32; 9]; 9]);
-
 impl Sudoku {
     pub fn clear(&mut self) {
         self.0 = [[0; 9]; 9];
@@ -279,10 +262,7 @@ impl Dialect {
                 .replace("?", "%3F")
         )
     }
-    pub fn lang(&self) -> Vec<String> {
-        self.lang
-            .iter()
-            .map(|lang| lang.1.clone())
-            .collect::<Vec<String>>()
+    pub fn lang(&self) -> Vec<&str> {
+        self.lang.iter().map(|lang| lang.1.as_str()).collect()
     }
 }

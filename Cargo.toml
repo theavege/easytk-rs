@@ -8,18 +8,14 @@ description = "MVC-pattern for FlTk-rs and Gtk-rs"
 keywords = ["MVC", "SVU"]
 categories = ["gui"]
 edition = "2024"
-exclude = ["examples"]
+exclude = ["examples", "assets", ".github"]
 
 [dependencies]
 reqwest = { version = "0.12", features = ["json", "native-tls", "blocking"], optional = true }
-json-tools = { version = "1", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 fltk = { version = "1.5"}
-
-[target.'cfg(unix)'.dependencies]
-gtk = { version = "0.18"}
-
+json-tools = { version = "1", optional = true }
 comfy-table = { version = "7", optional = true }
 
 xlsxwriter = { version = "0", optional = true }
@@ -30,9 +26,9 @@ serde = { version="1", features = ["derive"], optional = true  }
 serde_json = { version = "1", optional = true  }
 rmp-serde = { version="1", optional = true  }
 
+[target.'cfg(unix)'.dependencies]
+gtk = { version = "0.18"}
+
 [features]
-reqwest = [
-    "dep:reqwest",
-    "json-tools",
-]
+reqwest = ["dep:reqwest"]
 all = ["reqwest"]

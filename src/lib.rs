@@ -467,28 +467,24 @@ pub mod prelude {
             let page = Self::default();
             let view = page.view(sender.clone());
             page.update(&model);
-            gtk::glib::timeout_add_local(std::time::Duration::from_millis(20), {
-                let sender = sender.clone();
-                move || {
-                    if let Ok(msg) = resiver.try_recv()
-                        && Self::handle(msg, &mut model, sender.clone())
-                    {
-                        page.update(&model);
-                    }
-                    gtk::glib::ControlFlow::Continue
+            gtk::glib::timeout_add_local(std::time::Duration::from_millis(20), move || {
+                if let Ok(msg) = resiver.try_recv()
+                    && Self::handle(msg, &mut model, sender.clone())
+                {
+                    page.update(&model);
                 }
+                gtk::glib::ControlFlow::Continue
             });
             view
         }
-        fn run() -> gtk::glib::ExitCode {
-            let app = gtk::Application::builder()
-                .application_id("io.gitlab.kbit")
-                .build();
+        fn run(id: &str, width: i32, height: i32) -> gtk::glib::ExitCode {
+            let app = gtk::Application::builder().application_id(id).build();
             app.connect_activate(move |app| {
                 gtk::ApplicationWindow::builder()
                     .application(app)
-                    .width_request(640)
-                    .height_request(400)
+                    .window_position(gtk::WindowPosition::Center)
+                    .width_request(width)
+                    .height_request(height)
                     .child(&Self::mount())
                     .build()
                     .show_all();

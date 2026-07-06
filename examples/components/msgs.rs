@@ -1,8 +1,3 @@
-pub enum Converter {
-    Cel(f64),
-    Far(f64),
-}
-
 pub enum Curl {
     Url(String),
     Body(String),

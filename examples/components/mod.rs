@@ -1,4 +1,4 @@
-pub mod mdls;
+pub mod models;
 pub mod msgs;
 
 #[cfg(target_os = "linux")]

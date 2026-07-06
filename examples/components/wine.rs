@@ -3,20 +3,16 @@ use std::collections::HashMap;
 
 #[derive(Clone, Default)]
 pub struct Converter(Input, Input);
-
 impl Component for Converter {
-    type Event = super::msgs::Converter;
-    type State = super::mdls::Converter;
+    type Event = f64;
+    type State = f64;
     fn handle(msg: Self::Event, model: &mut Self::State, _: Sender<Self::Event>) -> bool {
-        match msg {
-            Self::Event::Cel(value) => model.set_cel(value),
-            Self::Event::Far(value) => model.set_far(value),
-        };
+        *model = msg;
         true
     }
     fn update(&mut self, model: &Self::State) {
-        self.0.update(&model.0.to_string());
-        self.1.update(&model.1.to_string());
+        self.0.update(&((*model - 32.0) * 5.0 / 9.0).to_string());
+        self.1.update(&((*model * 9.0 / 5.0) + 32.0).to_string());
     }
     fn view(&mut self, sender: Sender<Self::Event>) -> impl WidgetExt {
         let mut wgt = Wizard::default_fill();
@@ -33,9 +29,10 @@ impl Component for Converter {
                 self.0.set_callback({
                     let sender = sender.clone();
                     move |wgt| {
-                        if wgt.has_focus() {
-                            let value = wgt.value().parse::<f64>().unwrap_or_default();
-                            sender.send(Self::Event::Cel(value)).unwrap();
+                        if wgt.has_focus()
+                            && let Ok(value) = wgt.value().parse::<f64>()
+                        {
+                            sender.send(value).unwrap();
                         }
                     }
                 });
@@ -48,9 +45,10 @@ impl Component for Converter {
                 self.1.set_callback({
                     let sender = sender.clone();
                     move |wgt| {
-                        if wgt.has_focus() {
-                            let value = wgt.value().parse::<f64>().unwrap_or_default();
-                            sender.send(Self::Event::Far(value)).unwrap();
+                        if wgt.has_focus()
+                            && let Ok(value) = wgt.value().parse::<f64>()
+                        {
+                            sender.send(value).unwrap();
                         }
                     }
                 });
@@ -608,9 +606,8 @@ impl Component for Sudoku {
                                     flex.fixed(&Frame::default(), pad * 2);
                                 };
                                 flex.add({
-                                    let wgt = &mut self.0[row][col];
-                                    wgt.draw(draw_frame);
-                                    wgt.handle({
+                                    self.0[row][col].draw(draw_frame);
+                                    self.0[row][col].handle({
                                         let sender = sender.clone();
                                         move |frm, event| match event {
                                             Event::Push => match event_mouse_button() {
@@ -660,7 +657,7 @@ impl Component for Sudoku {
                                             _ => false,
                                         }
                                     });
-                                    wgt
+                                    &self.0[row][col]
                                 });
                             }
                             flex.end();
@@ -726,6 +723,10 @@ impl Component for Dialect {
     type State = super::mdls::Dialect;
     fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool {
         match msg {
+            Self::Event::Switch => {
+                model.switch();
+                true
+            }
             Self::Event::Open(value) => {
                 model.source = std::fs::read_to_string(value).unwrap();
                 true
@@ -757,10 +758,6 @@ impl Component for Dialect {
             Self::Event::Quit => {
                 model.save();
                 false
-            }
-            Self::Event::Switch => {
-                model.switch();
-                true
             }
             Self::Event::Run => {
                 if model.from != model.to && !model.source.is_empty() {
