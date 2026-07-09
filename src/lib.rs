@@ -177,8 +177,8 @@ pub mod prelude {
         }
     }
 
-    impl Update<(Vec<String>, i32)> for Choice {
-        fn update(&mut self, value: (Vec<String>, i32)) {
+    impl Update<(&Vec<&str>, i32)> for Choice {
+        fn update(&mut self, value: (&Vec<&str>, i32)) {
             if self.size() != value.0.len() as i32 {
                 self.clear();
                 if !value.0.is_empty() {

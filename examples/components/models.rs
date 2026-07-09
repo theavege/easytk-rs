@@ -71,7 +71,7 @@ impl Calculator {
 
 #[derive(Default)]
 pub struct Pictures {
-    pub list: Vec<String>,
+    list: Vec<String>,
     pub idx: usize,
     pub scale: f64,
 }
@@ -110,6 +110,9 @@ impl Pictures {
             self.list.push(item);
         }
         self.idx = 0;
+    }
+    pub fn list(&self) -> Vec<&str> {
+        self.list.iter().map(|x| x.as_str()).collect()
     }
 }
 

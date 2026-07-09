@@ -164,7 +164,7 @@ const HEIGHT: i32 = PAD * 3;
 
 impl Component for Calculator {
     type Event = String;
-    type State = super::mdls::Calculator;
+    type State = super::models::Calculator;
     fn handle(msg: Self::Event, model: &mut Self::State, _: Sender<Self::Event>) -> bool {
         model.click(&msg);
         true
@@ -363,7 +363,15 @@ pub struct Pictures {
 
 impl Component for Pictures {
     type Event = super::msgs::Pictures;
-    type State = super::mdls::Pictures;
+    type State = super::models::Pictures;
+    fn update(&mut self, model: &Self::State) {
+        self.prev.update(model.list().len() > 1);
+        self.next.update(model.list().len() > 1);
+        self.remo.update(model.list().len() > 1);
+        self.valu.update(!model.list().is_empty());
+        self.list.update((&model.list(), model.idx as i32));
+        self.canv.update((model.path(), model.scale as i32));
+    }
     fn handle(msg: Self::Event, model: &mut Self::State, _: Sender<Self::Event>) -> bool {
         match msg {
             Self::Event::Add(value) => model.set_list(value),
@@ -373,14 +381,6 @@ impl Component for Pictures {
             Self::Event::Scale(value) => model.scale = value,
         };
         true
-    }
-    fn update(&mut self, model: &Self::State) {
-        self.prev.update(model.list.len() > 1);
-        self.next.update(model.list.len() > 1);
-        self.remo.update(model.list.len() > 1);
-        self.valu.update(!model.list.is_empty());
-        self.list.update((model.list.clone(), model.idx as i32));
-        self.canv.update((model.path(), model.scale as i32));
     }
     fn view(&mut self, sender: Sender<Self::Event>) -> impl WidgetExt {
         let mut wgt = Flex::default_fill().column();
@@ -554,7 +554,7 @@ pub struct Sudoku([[Frame; 9]; 9]);
 
 impl Component for Sudoku {
     type Event = super::msgs::Sudoku;
-    type State = super::mdls::Sudoku;
+    type State = super::models::Sudoku;
     fn handle(msg: Self::Event, model: &mut Self::State, _: Sender<Self::Event>) -> bool {
         match msg {
             Self::Event::Push(row, col, value) => model.0[row][col] = value,
@@ -720,7 +720,14 @@ pub struct Dialect {
 
 impl Component for Dialect {
     type Event = super::msgs::Dialect;
-    type State = super::mdls::Dialect;
+    type State = super::models::Dialect;
+    fn update(&mut self, state: &Self::State) {
+        self.to.update((&state.lang(), state.to));
+        self.from.update((&state.lang(), state.from));
+        self.source.update(&state.source);
+        self.target.update(&state.target);
+        self.translate.update(!state.lang.is_empty());
+    }
     fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool {
         match msg {
             Self::Event::Switch => {
@@ -780,13 +787,6 @@ impl Component for Dialect {
                 false
             }
         }
-    }
-    fn update(&mut self, state: &Self::State) {
-        self.to.update((state.lang(), state.to));
-        self.from.update((state.lang(), state.from));
-        self.source.update(&state.source);
-        self.target.update(&state.target);
-        self.translate.update(!state.lang.is_empty());
     }
     fn view(&mut self, sender: Sender<Self::Event>) -> impl WidgetExt {
         std::thread::spawn({
