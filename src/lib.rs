@@ -100,14 +100,16 @@ pub mod prelude {
             let (sender, resiver) = channel::<Self::Event>();
             let mut model = Self::State::default();
             self.update(&model);
-            const TICK: f64 = 0.02;
+            const TICK: f64 = 0.04;
             app::add_timeout3(TICK, {
                 let mut page = self.clone();
                 let sender = sender.clone();
                 move |handle| {
-                    if let Ok(msg) = resiver.try_recv()
-                        && Self::handle(msg, &mut model, sender.clone())
-                    {
+                    let mut update = false;
+                    while let Ok(msg) = receiver.try_recv() {
+                        update = Self::handle(msg, &mut model, sender.clone()) || update;
+                    };
+                    if update {
                         page.update(&model);
                     }
                     app::repeat_timeout3(TICK, handle);
@@ -462,15 +464,17 @@ pub mod prelude {
         fn update(&self, model: &Self::State);
         fn handle(msg: Self::Event, model: &mut Self::State, sender: Sender<Self::Event>) -> bool;
         fn mount() -> gtk::Box {
-            let (sender, resiver) = std::sync::mpsc::channel::<Self::Event>();
+            let (sender, receiver) = std::sync::mpsc::channel::<Self::Event>();
             let mut model = Self::State::default();
             let page = Self::default();
             let view = page.view(sender.clone());
             page.update(&model);
-            gtk::glib::timeout_add_local(std::time::Duration::from_millis(20), move || {
-                if let Ok(msg) = resiver.try_recv()
-                    && Self::handle(msg, &mut model, sender.clone())
-                {
+            gtk::glib::timeout_add_local(std::time::Duration::from_millis(40), move || {
+                let mut update = false;
+                while let Ok(msg) = receiver.try_recv() {
+                    update = Self::handle(msg, &mut model, sender.clone()) || update;
+                };
+                if update {
                     page.update(&model);
                 }
                 gtk::glib::ControlFlow::Continue

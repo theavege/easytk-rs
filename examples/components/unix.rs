@@ -498,13 +498,16 @@ impl Component for Sudo {
         }
     }
     fn view(&self, _sender: Sender<Self::Event>) -> gtk::Box {
-        let wgt = gtk::Box::new(gtk::Orientation::Vertical, PAD);
-        wgt.set_margin(PAD);
+        let y = gtk::Box::new(gtk::Orientation::Vertical, PAD);
+        y.set_margin(PAD);
         for row in 0..9 {
+            let x = gtk::Box::new(gtk::Orientation::Horizontal, PAD);
+            x.set_margin(PAD);
             for col in 0..9 {
-                wgt.add(&self.0[row][col]);
+                x.add(&self.0[row][col]);
             }
+            y.add(&x);
         }
-        wgt
+        y
     }
 }
